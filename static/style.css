@@ -1,0 +1,10 @@
+.nav-btn {
+    background-color: transparent;
+    color: white;
+    border-color: white;
+    margin-left: 521px;
+}
+.nav-btn:hover {
+    color: teal;
+    background-color: #fff;
+}
