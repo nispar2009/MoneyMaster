@@ -1,56 +1,49 @@
 from flask import Flask, render_template, redirect, request, make_response
 import sqlite3
-import security
+import datetime
 
 app = Flask(__name__)
 
-connection = sqlite3.connect('moneymaster.db')
-cursor = connection.cursor()
-
-cursor.execute('CREATE TABLE IF NOT EXISTS users (username text, password text, balance int)')
-
-connection.commit()
-connection.close()
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    connection = sqlite3.connect('moneymaster.db')
+    connection = sqlite3.connect('cashco.db')
     cursor = connection.cursor()
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+    
+    if len(list(cursor.execute('SELECT * FROM users WHERE username=?', (request.cookies.get('cashco_user'),)))) > 0:
+        return render_template('index.html', user=request.cookies.get('cashco_user'))
+    
+    return redirect('http://127.0.0.1:5000')
 
-        login = security.login(username, password)
+@app.route('/transfer', methods=['POST'])
+def transfer():
+    connection = sqlite3.connect('cashco.db')
+    cursor = connection.cursor()
 
-        if login['user_exists']:
-            if login['auth']:
-                response = make_response('You are logged in to your account. Click <a href="/">here</a>.')
-                response.set_cookie('moneymaster_user', username)
-                return response
-            else:
-                return 'Error: Incorrect password'
+    money = request.form['money']
+    fr = request.cookies.get('cashco_user')
+    to = request.form['to']
 
-        cursor.execute('INSERT INTO users (username, password, balance) VALUES (?, ?, 0)', (username, password))
-        connection.commit()
-        response = make_response('Your new account has been created. Click <a href="/">here</a>.')
-        response.set_cookie('moneymaster_user', username)
-        return response
-
-    print(request.cookies.get('moneymaster_user'))
+    if (len(list(cursor.execute('SELECT * FROM users WHERE username=?', fr))) == 1) and (len(list(cursor.execute('SELECT * FROM users WHERE username=?', to))) == 1):
+        cursor.execute('UPDATE users WHERE username=? SET balance=balance+?', (to, money))
+        cursor.execute('UPDATE users WHERE username=? SET balance=balance-?', (fr, money))
+        cursor.execute('INSERT INTO msg (feature, receiver, cnt, date) VALUES (?, ?, ?, ?)', (5001, to, f'Dear user, {fr} has transferred to you an amount of ${money}.', datetime.datetime().utcnow()))
+    else:
+        return 'Transaction failed. Make sure you are <a href="http://127.0.0.1:5000>logged in</a> and that the recipient of your money exists.'
 
     connection.commit()
+    connection.close()
+
+@app.route('/msg')
+def msg():
+    connection = sqlite3.connect('cashco.db')
+    cursor = connection.cursor()
     
-    if len(list(cursor.execute('SELECT * FROM users WHERE username=?', (request.cookies.get('moneymaster_user'),)))) > 0:
-        return render_template('index.html', user=request.cookies.get('moneymaster_user'))
+    if len(list(cursor.execute('SELECT * FROM users WHERE username=?', (request.cookies.get('cashco_user'),)))) > 0:
+        all_msg = cursor.execute('SELECT cnt FROM msg WHERE receiver=? AND feature=5001', ((request.cookies.get('cashco_user')),))
+        return render_template('msg.html', msg=list(all_msg), len=len)
+
+    connection.close()
     
-    return render_template('login.html')
+    return redirect('http://127.0.0.1:5000')
 
-@app.route('/signout')
-def signout():
-    response = make_response(f'You are signed out from your previous account ({request.cookies.get("moneymaster_user")}). Click <a href="/">here</a> to log on from another account.')
-    response.set_cookie('moneymaster_user', '')
-    return response
-
-
-
-app.run(debug=True, port='5000')
+app.run(debug=True, port='5001')

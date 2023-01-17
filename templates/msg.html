@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block t %}Messages{% endblock %}
+
+{% block b %}
+
+<h1 class="heading">View incoming messages from CashCo</h1>
+
+You have {{ len(all_msg) }} messages in MoneyMaster.
+
+<ul>
+    {% for msg in all_msg %}<li>{{ msg }}</li>{% endfor %}
+</ul>
+
+{% endblock %}
