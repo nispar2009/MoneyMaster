@@ -5,10 +5,10 @@
 
 <h1 class="heading">View incoming messages from CashCo</h1>
 
-You have {{ len(all_msg) }} messages in MoneyMaster.
+You have {{ len1(all_msg) }} messages in MoneyMaster.
 
 <ul>
-    {% for msg in all_msg %}<li>{{ msg }}</li>{% endfor %}
+    {% for iterator in all_msg %}<li>{{ iterator[2] }}</li>{% endfor %}
 </ul>
 
 {% endblock %}

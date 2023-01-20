@@ -4,5 +4,23 @@
 {% block b %}
 
 <h1 class="heading">Welcome to MoneyMaster, {{ user }}!</h1>
+<p>
+    Balance: ${{ balance }}
+</p>
+
+<h2 class="heading">Transfer money</h2>
+<form action="/transfer" method="post">
+    <input type="text" name="to" class="form" placeholder="Recipient..." required>
+    <br><br>
+    <input type="number" name="money" class="form" placeholder="Amount..." min="1" max="{{ balance }}" required>
+    <br><br>
+    <div class="hover-all">
+        <button type="submit" class="btn btn-orange-outline btn-rounded btn-submit">Send</button>
+        <div class="hover-content">
+            Think twice before clicking this! Once it's done, there's no going back!
+        </div>
+    </div>
+</form>
+<br>
 
 {% endblock %}
